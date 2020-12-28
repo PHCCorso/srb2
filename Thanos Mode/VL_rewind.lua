@@ -13,7 +13,7 @@
 local MAX_REWIND_CHAIN_LENGTH = 10 * TICRATE
 local TIMESTONE_DRAIN = 1
 
-function A_GetPlayerState(player) // Imma making every function global because local scope sucks
+function A_GetPlayerState(player, stack) // Imma making every function global because local scope sucks
   local state = {}
   state.powers = {}
 
@@ -26,7 +26,7 @@ function A_GetPlayerState(player) // Imma making every function global because l
   state.powers[pw_nocontrol] = 1<<15
 
   if (player.followmobj)
-    state.followmobjstate = A_GetMobjState(player.followmobj) // For Tails and Metal Sonic
+    state.followmobjstate = A_GetMobjState(player.followmobj, stack) // For Tails and Metal Sonic
   end
 
   state.pflags = player.pflags | PF_FULLSTASIS // stop moving
@@ -41,15 +41,15 @@ function A_GetPlayerState(player) // Imma making every function global because l
   return state
 end
 
-function A_SetPlayerState(player, state)
+function A_SetPlayerState(player, state, stack)
   player.powers[pw_flashing] = state.powers[pw_flashing]
   player.powers[pw_carry] = state.powers[pw_carry]
   player.powers[pw_tailsfly] = state.powers[pw_tailsfly]
   player.powers[pw_spacetime] = state.powers[pw_spacetime]
   player.powers[pw_underwater] = state.powers[pw_underwater]
 
-  if (state.followmobjstatew)
-    A_SetMobjState(player.followmobj, state.followmobjstate)
+  if (state.followmobjstate)
+    A_SetMobjState(player.followmobj, state.followmobjstate, stack)
   end
 
   player.pflags = state.pflags
@@ -67,8 +67,8 @@ function A_GetMobjState(mo, stack)
   end
   stack[mo] = state
 
-  if (mo.player)
-    state.player = A_GetPlayerState(mo.player)
+  if (mo.player and not(stack[mo.player])) // avoid infinite recursion here
+    state.player = A_GetPlayerState(mo.player, stack)
   end
 
   // Alright, imma copy everything I can
@@ -95,11 +95,11 @@ function A_GetMobjState(mo, stack)
   state.fuse = mo.fuse
   state.extravalue1 = mo.extravalue1
   state.extravalue2 = mo.extravalue2
-  if (mo.tracer and mo.tracer.type ~= MT_PLAYER) // The tracer comes with us
+  if (mo.tracer) // The tracer comes with us
     state.tracer = mo.tracer
     state.tracertype = mo.tracer.type
-    if (stack[mo.tracer])
-      state.tracerstate = stack[mo.tracer] // This means we have already stored the state of that mobj. Avoid infinite recursion.
+    if (stack[mo.tracer]) // This means we have already stored the state of that mobj. Avoid infinite recursion.
+      state.tracerstate = stack[mo.tracer] 
     else
       state.tracerstate = A_GetMobjState(state.tracer, stack) // Why stop at the top level?
     end
@@ -124,7 +124,7 @@ function A_SetMobjState(mo, state, stack)
   stack[mo] = state
 
   if (mo.player)
-    A_SetPlayerState(mo.player, state.player)
+    A_SetPlayerState(mo.player, state.player, stack)
   end
 
   P_TeleportMove(mo, state.x, state.y, state.z)
