@@ -68,7 +68,7 @@ function A_GetMobjState(mo, stack)
   stack[mo] = state
 
   if (mo.player and not(stack[mo.player])) // avoid infinite recursion here
-    state.player = A_GetPlayerState(mo.player, stack)
+    state.player = A_GetPlayerState(mo.player, stack) // Yup, we pass the stack here because we call A_GetMobjState there too
   end
 
   // Alright, imma copy everything I can
@@ -227,11 +227,11 @@ local function rewind(player) // Where the magic happens
 end
 
 addHook("MobjDeath", function(target)
-  local tracer = {} // For debugging
-  if (target.tracer)
-    tracer = target.tracer
-  end
-  print(string.format("target: %s, tracer: %s", tostring(target.type), tostring(tracer.type)))
+  //local tracer = {} // For debugging
+  //if (target.tracer)
+  //  tracer = target.tracer
+  //end
+  //print(string.format("target: %s, tracer: %s", tostring(target.type), tostring(tracer.type)))*/
 
   if (target.player and target.player.rewinding) // No dying while rewinding. Specially useful for minecarts.
     target.health = 1
