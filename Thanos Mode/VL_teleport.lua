@@ -2,11 +2,11 @@
   Author: PHCC
   Date: 28/12/2020
 
-    SPACE POWAS!
-    
-    To be futurely used as the power for the blue emerald (space stone)
+  SPACE POWAS!
+  
+  To be futurely used as the power for the blue emerald (space stone)
 
-    Press BT_CUSTOM2 to bind yourself to a point in space, then press it again to teleport back there!
+  Press BT_CUSTOM2 to bind yourself to a point in space, then press it again to teleport back there!
     
 */
 
@@ -23,9 +23,7 @@ local function createPortal(player)
   portal.x = mo.x
   portal.y = mo.y
   portal.z = mo.z
-  portal.scale = mo.scale
   portal.playsound = true
-
   player.portal = portal
 
   A_PlaySound(mo, 162)
@@ -41,7 +39,8 @@ local function usePortal(player)
 end
 
 local function spawnPortalSparkle(portal)
-  local sparkle = P_SpawnMobj(portal.x + P_RandomRange(-12,12)*portal.scale, portal.y + P_RandomRange(-12,12)*portal.scale, portal.z + P_RandomKey(42)*portal.scale, MT_BOXSPARKLE)
+  local playerscale = portal.player.scale
+  local sparkle = P_SpawnMobj(portal.x + P_RandomRange(-12,12)*playerscale, portal.y + P_RandomRange(-12,12)*playerscale, portal.z + P_RandomKey(42)*playerscale, MT_BOXSPARKLE)
   
   if (portal.playsound)
     A_PlaySound(sparkle, 184)

@@ -2,11 +2,11 @@
   Author: PHCC
   Date: 28/12/2020
 
-    TIME POWAS!
-    
-    To be futurely used as the power for the green emerald (time stone)
+  TIME POWAS!
+  
+  To be futurely used as the power for the green emerald (time stone)
 
-    Press BT_CUSTOM2 to rewind!
+  Press BT_CUSTOM2 to rewind!
     
 */
 
