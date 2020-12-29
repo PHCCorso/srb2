@@ -4,7 +4,7 @@
 
   ENERGY POWAS!
   
-  To be futurely used as the power for the purple emerald (space stone)
+  To be futurely used as the power for the purple emerald (power stone)
 
   Press BT_CUSTOM2 to summon an energy ball that will follow you around, destroying all nearby enemies
     
