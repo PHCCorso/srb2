@@ -11,21 +11,34 @@
 */
 
 local POWERSTONE_DRAIN = 15
-local POWERBALL_LIFE = 20*TICRATE
+local POWERBALL_LIFE = 30*TICRATE
 local POWERBALL_RADIUS = 192
 local POWERBALL_ROTSPEED = 1<<24
 local POWERBALL_SPEED = 256*FRACUNIT
 local POWERBALL_RANGE = 1024*FRACUNIT
 
-local SPECIAL_MOBJS = {
+local SPECIAL_MOBJS = { // Oh, there are always special cases
   [MT_EGGSHIELD] = true
 }
 
 addHook("ShouldDamage", function(player, inflictor) 
-  if (player.powerball == inflictor)
+  if (player.powerball and player.powerball == inflictor) // The player who summoned it cannot be damaged
     return false
   end
 end, MT_PLAYER)
+
+addHook("ShouldDamage", function(powerball) 
+  if (powerball.life and powerball.life > 0) // The powerball is UNDAMAGABLE!!!
+    return false
+  end
+end, MT_ENERGYBALL)
+
+addHook("MobjDeath", function(powerball) 
+  if (powerball.life and powerball.life > 0) // The powerball is UNKILLABLE!!!
+    powerball.health = 1
+    return true
+  end
+end, MT_ENERGYBALL)
 
 local function summonPowerBall(player)
   if (player.rings - POWERSTONE_DRAIN < 0) return end
@@ -36,15 +49,16 @@ local function summonPowerBall(player)
   powerball.target = player.mo
   powerball.scale = $/4
   powerball.life = POWERBALL_LIFE
+  powerball.flags = $ | MF_NOCLIP | MF_NOGRAVITY | MF_NOCLIPTHING
   player.mo.powerball = powerball
 end
 
 local function isCloseEnough(mobjA, mobjB, hthreshold)
-  local dx = mobjA.x - mobjB.x
-  local dy = mobjA.y - mobjB.y
+  local dx = abs(mobjA.x - mobjB.x)
+  local dy = abs(mobjA.y - mobjB.y)
   
   local hdist = P_AproxDistance(dx, dy)
-  local dz = mobjA.z - mobjB.z
+  local dz = abs(mobjA.z - mobjB.z)
 
   if (hdist - hthreshold <= 0 and dz - mobjA.height <= 0)
     return true
@@ -58,7 +72,7 @@ local function powerBallThinker(powerball)
 
   local player = powerball.target.player
 
-  if (powerball.life == 0)
+  if (powerball.life <= 0)
     P_KillMobj(powerball)
     player.mo.powerball = nil
     return
@@ -109,7 +123,7 @@ addHook("ThinkFrame", function()
     if(player.mo and player.mo.valid)
 
       if (player.cmd.buttons & BT_CUSTOM2 and not(player.prevcmd & BT_CUSTOM2))
-        if (not(player.mo.powerball))
+        if (not(player.mo.powerball and player.mo.powerball.valid))
           summonPowerBall(player)
         end
       end
