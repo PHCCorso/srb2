@@ -20,7 +20,7 @@ local INV_DURATION = 3*TICRATE
 local function detectThreats(player)
   local shouldDefend = false
 
-  searchBlockmap("objects", function(mo, object) 
+  searchBlockmap("objects", function(mo, object) // There is quite a lot of objects with NO_BLOCKMAP flag that can hurt you, and I am not gonna fix that
     if(object.valid)
       if ((object.flags & (MF_ENEMY|MF_BOSS))
           and player.mo.state ~= S_PLAY_DASH
