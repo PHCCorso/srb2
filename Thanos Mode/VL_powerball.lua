@@ -11,7 +11,7 @@
 */
 
 local POWERSTONE_DRAIN = 15
-local POWERBALL_LIFE = 30*TICRATE
+local POWERBALL_LIFE = 15*TICRATE
 local POWERBALL_RADIUS = 192
 local POWERBALL_ROTSPEED = 1<<24
 local POWERBALL_SPEED = 256*FRACUNIT
@@ -81,10 +81,10 @@ local function powerBallThinker(powerball)
   if (not(powerball.tracer and powerball.tracer.valid))
     local target
 
-    searchBlockmap("objects", function(player, object) 
+    searchBlockmap("objects", function(_, object) 
       if(object.valid 
-    and (object.flags & (MF_ENEMY|MF_BOSS) or SPECIAL_MOBJS[object.type])
-    and (powerball.prevtarget ~= object)) // The previous one (if not dead) is still flickering
+         and (object.flags & (MF_ENEMY|MF_BOSS) or SPECIAL_MOBJS[object.type])
+         and (powerball.prevtarget ~= object)) // The previous one (if not dead) is still flickering
         target = object
         return true
       end
