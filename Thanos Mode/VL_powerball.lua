@@ -27,12 +27,6 @@ addHook("ShouldDamage", function(player, inflictor)
   end
 end, MT_PLAYER)
 
-addHook("ShouldDamage", function(powerball) 
-  if (powerball.life and powerball.life > 0) // The powerball is UNDAMAGABLE!!!
-    return false
-  end
-end, MT_ENERGYBALL)
-
 addHook("MobjDeath", function(powerball) 
   if (powerball.life and powerball.life > 0) // The powerball is UNKILLABLE!!!
     powerball.health = 1
@@ -53,14 +47,16 @@ local function summonPowerBall(player)
   player.mo.powerball = powerball
 end
 
-local function isCloseEnough(mobjA, mobjB, hthreshold)
+local function isCloseEnough(mobjA, mobjB, hthreshold) // I dont know what I am doing
   local dx = abs(mobjA.x - mobjB.x)
   local dy = abs(mobjA.y - mobjB.y)
   
   local hdist = P_AproxDistance(dx, dy)
   local dz = abs(mobjA.z - mobjB.z)
+  local maxradius = max(mobjA.radius, mobjB.radius)
+  local maxheight = max(mobjA.height, mobjB.height)
 
-  if (hdist - hthreshold <= 0 and dz - mobjA.height <= 0)
+  if (hdist - maxradius - hthreshold <= 0 and dz - maxheight <= 0)
     return true
   end
 
@@ -73,6 +69,7 @@ local function powerBallThinker(powerball)
   local player = powerball.target.player
 
   if (powerball.life <= 0)
+    S_StartSound(powerball, 120)
     P_KillMobj(powerball)
     player.mo.powerball = nil
     return
@@ -85,7 +82,9 @@ local function powerBallThinker(powerball)
     local target
 
     searchBlockmap("objects", function(player, object) 
-      if(object.valid and (object.flags & (MF_ENEMY|MF_BOSS) or SPECIAL_MOBJS[object.type]))
+      if(object.valid 
+    and (object.flags & (MF_ENEMY|MF_BOSS) or SPECIAL_MOBJS[object.type])
+    and (powerball.prevtarget ~= object)) // The previous one (if not dead) is still flickering
         target = object
         return true
       end
@@ -100,19 +99,28 @@ local function powerBallThinker(powerball)
       end
 
       if (powerball.onplayerradius)
+        powerball.prevtarget = nil
         A_Custom3DRotate(powerball, POWERBALL_RADIUS, POWERBALL_ROTSPEED)
       else
-        A_HomingChase(powerball, POWERBALL_SPEED, 0)
+        A_HomingChase(powerball, POWERBALL_SPEED, 0) // Go back to the player... graciously
       end
     end
   else
     powerball.onplayerradius = false
-    A_HomingChase(powerball, POWERBALL_SPEED, 1)
+    A_HomingChase(powerball, POWERBALL_SPEED, 1) // Hunt down those f*ers
     if (isCloseEnough(powerball, powerball.tracer, powerball.height))
         P_DamageMobj(powerball.tracer, powerball, player.mo)
         if (SPECIAL_MOBJS[powerball.tracer.type])
-          P_KillMobj(powerball.tracer)
+          P_KillMobj(powerball.tracer) // If cannot damage, kill it
         end
+
+        // Slow down, friend!
+        powerball.momx = 0
+        powerball.momy = 0
+        powerball.momz = 0
+
+        // Keep froom hitting the same enemy again
+        powerball.prevtarget = powerball.tracer
         powerball.tracer = nil
     end
   end
