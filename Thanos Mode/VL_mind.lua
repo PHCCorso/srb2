@@ -46,8 +46,6 @@ local function doAstralProjection(player) // Disembody yourself
   player.body = body
 
   P_Thrust(mo, mo.angle, 20*FRACUNIT)
-
-  P_SpawnShieldOrb(player)
 end
 
 local function endAstralProjection(body) // We are bringing our ghost/soul back to our body
