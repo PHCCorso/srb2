@@ -109,14 +109,14 @@ local function handleBodyDrowning(player)
   if (player.body.powers[pw_spacetime])
     player.body.powers[pw_spacetime] = $ - 1
     if (player.body.powers[pw_spacetime] <= 0) // Time is up, so you die
-      P_KillMobj(player.body)
+      endAstralProjection(player.body)
       P_KillMobj(player.mo, nil, nil, DMG_SPACEDROWN)
     end
   end
   if (player.body.powers[pw_underwater])
     player.body.powers[pw_underwater] = $ - 1
     if (player.body.powers[pw_underwater] <= 0)
-      P_KillMobj(player.body)
+      endAstralProjection(player.body)
       P_KillMobj(player.mo, nil, nil, DMG_DROWNED)
     end
   end
