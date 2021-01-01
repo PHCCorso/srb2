@@ -8,10 +8,10 @@
 
   With this power, you will be able to project yourself out of your body. Be careful that your body will be vulnerable
   to attacks. Plus, you cannot go that far: you have 35 seconds to do your things. While outside of your body, you will
-  not be able to kill enemies, but you will be able to catch rings and pop monitors! Also, you will be intangible to any
+  not be able to kill enemies or pop monitors, but you will be able to catch rings! Also, you will be intangible to any
   wall and invulnerable to any hazards.
 
-  Ah, and that will cost you 25 rings. So use it wisely.
+  Ah, and that will cost you 20 rings. So use it wisely.
     
 */
 
