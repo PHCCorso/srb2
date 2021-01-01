@@ -193,7 +193,7 @@ local function addNewStateToPlayerChain(player, state) // If you dont understand
     chain.laststate = state
   end
 
-  if(not(chain.length))
+  if (not(chain.length))
     chain.length = 1
   else
     chain.length = $ + 1

@@ -82,7 +82,7 @@ local function powerBallThinker(powerball)
     local target
 
     searchBlockmap("objects", function(_, object) 
-      if(object.valid 
+      if (object.valid 
          and (object.flags & (MF_ENEMY|MF_BOSS) or SPECIAL_MOBJS[object.type])
          and (powerball.prevtarget ~= object)) // The previous one (if not dead) is still flickering
         target = object
@@ -128,7 +128,7 @@ end
 
 addHook("ThinkFrame", function()
   for player in players.iterate
-    if(player.mo and player.mo.valid)
+    if (player.mo and player.mo.valid)
 
       if (player.cmd.buttons & BT_CUSTOM2 and not(player.prevcmd & BT_CUSTOM2))
         if (not(player.mo.powerball and player.mo.powerball.valid))

@@ -21,7 +21,7 @@ local function detectThreats(player)
   local shouldDefend = false
 
   searchBlockmap("objects", function(mo, object) // There is quite a lot of objects with NO_BLOCKMAP flag that can hurt you, and I am not gonna fix that
-    if(object.valid)
+    if (object.valid)
       if ((object.flags & (MF_ENEMY|MF_BOSS))
           and player.mo.state ~= S_PLAY_DASH
           and player.mo.state ~= S_PLAY_ROLL
@@ -79,7 +79,7 @@ end
 
 addHook("ThinkFrame", function()
   for player in players.iterate
-    if(player.mo and player.mo.valid)
+    if (player.mo and player.mo.valid)
 
       handlePlayerDefense(player)
       handleInvulnerability(player)
