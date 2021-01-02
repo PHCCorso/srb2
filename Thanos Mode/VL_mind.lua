@@ -7,17 +7,17 @@
   To be futurely used as the power for the orange emerald (mind stone & sould stone combined)
 
   With this power, you will be able to project yourself out of your body. Be careful that your body will be vulnerable
-  to attacks. Plus, you cannot go that far: you have 35 seconds to do your things. While outside of your body, you will
+  to attacks. Plus, you cannot go that far: you have 1 minute to do your things. While outside of your body, you will
   not be able to kill enemies or pop monitors, but you will be able to catch rings! Also, you will be intangible to any
   wall and invulnerable to any hazards.
 
-  Ah, and that will cost you 20 rings. So use it wisely.
+  Ah, and that will cost you 15 rings. So use it wisely.
   
   Press BT_CUSTOM2 to disembody yourself
 */
 
-local MINDSTONE_DRAIN = 0
-local PROJECTION_DURATION = 35*TICRATE
+local MINDSTONE_DRAIN = 15
+local PROJECTION_DURATION = 60*TICRATE
 local GASPSTATETICS = TICRATE/2
 
 local function doAstralProjection(player) // Disembody yourself (inspired on P_SpawnGhostMobj)
@@ -70,6 +70,9 @@ local function doAstralProjection(player) // Disembody yourself (inspired on P_S
     body.followmobj = followmobj
   end
 
+  // Setting our timer
+  body.projectiontics = PROJECTION_DURATION
+
   // Connect our ghost to our body, and our body to our ghost
   body.projection = mo
   player.body = body
@@ -84,6 +87,12 @@ local function endAstralProjection(body, damaged) // We are bringing our ghost/s
   A_PlaySound(mo, 190) // Play fancy sound
 
   P_TeleportMove(mo, body.x, body.y, body.z)
+
+  mo.momx = 0
+  mo.momy = 0
+  mo.momz = 0
+  mo.tracer = nil
+  mo.target = nil
   mo.angle = body.angle
   mo.scale = body.scale
   mo.sprite = body.sprite
@@ -95,6 +104,7 @@ local function endAstralProjection(body, damaged) // We are bringing our ghost/s
   mo.eflags = body.eflags
   player.powers[pw_spacetime] = body.powers[pw_spacetime]
   player.powers[pw_underwater] = body.powers[pw_underwater]
+  player.powers[pw_carry] = CR_NONE // For zoom tubes
 
   if(not(damaged)) // To handle special cases
     player.powers[pw_shield] = body.powers[pw_shield] // Give back the shield
@@ -197,6 +207,7 @@ local function handlePlayerProjection(player)
     if (not(player.body))
       if (player.rings - MINDSTONE_DRAIN < 0) return end // Not enough rings, stop it
       A_PlaySound(mo, 162)
+      player.rings = $ - MINDSTONE_DRAIN
       doAstralProjection(player)
     else
       endAstralProjection(player.body)
@@ -205,6 +216,21 @@ local function handlePlayerProjection(player)
 
   // Actual handling
   if (player.body and player.body.valid)
+    if (player.powers[pw_carry] == CR_PLAYER)
+      player.powers[pw_carry] = CR_NONE // Ghosts cannot be carried
+    end
+
+    if(player.body.projectiontics > 0)
+      player.body.projectiontics = $ - 1
+
+      local ticsleft = player.body.projectiontics
+      if (ticsleft % TICRATE == 0) // Warn the player that the clock is ticking!
+        S_StartSoundAtVolume(player.mo, 165, 255/(ticsleft/TICRATE + 1), player)
+      end
+    else
+      endAstralProjection(player.body)
+      return
+    end
     // For space or underwater situations
     handleBodyDrowning(player)
 
