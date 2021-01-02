@@ -24,6 +24,8 @@ local function doAstralProjection(player) // Disembody yourself (inspired on P_S
   local mo = player.mo
   local body = P_SpawnMobj(mo.x, mo.y, mo.z, MT_PLAYER)
 
+  A_PlaySound(mo, 156) // Play fancy sound
+
   // mobj info
   body.angle = mo.angle
   body.scale = mo.scale
@@ -78,6 +80,8 @@ end
 local function endAstralProjection(body, damaged) // We are bringing our ghost/soul back to our body
   local player = body.projection.player
   local mo = player.mo
+
+  A_PlaySound(mo, 190) // Play fancy sound
 
   P_TeleportMove(mo, body.x, body.y, body.z)
   mo.angle = body.angle
@@ -192,6 +196,7 @@ local function handlePlayerProjection(player)
     
     if (not(player.body))
       if (player.rings - MINDSTONE_DRAIN < 0) return end // Not enough rings, stop it
+      A_PlaySound(mo, 162)
       doAstralProjection(player)
     else
       endAstralProjection(player.body)
