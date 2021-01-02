@@ -12,7 +12,8 @@
   wall and invulnerable to any hazards.
 
   Ah, and that will cost you 20 rings. So use it wisely.
-    
+  
+  Press BT_CUSTOM2 to disembody yourself
 */
 
 local MINDSTONE_DRAIN = 0
