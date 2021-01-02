@@ -112,35 +112,35 @@ end
 
 local function spawnBodyBubbles(body) // Shamelessly stolen from srb2 sourcecode (why do it again when already done?)
   local x = body.x
-	local y = body.y
-	local z = body.z
+  local y = body.y
+  local z = body.z
 
-	if (not(body.eflags & MFE_UNDERWATER) or body.powers[pw_shield] & SH_PROTECTWATER)
+  if (not(body.eflags & MFE_UNDERWATER) or body.powers[pw_shield] & SH_PROTECTWATER)
     return
   end
 
-	if (body.charflags & SF_MACHINE)
-		if (body.powers[pw_underwater] and P_RandomChance((128-(body.powers[pw_underwater]/4))*FRACUNIT/256))
-			r = body.radius>>FRACBITS
-			x = $ + (P_RandomRange(r, -r)<<FRACBITS)
-			y = $ + (P_RandomRange(r, -r)<<FRACBITS)
-			z = $ + (P_RandomKey(body.height>>FRACBITS)<<FRACBITS)
-			P_SpawnMobj(x, y, z, MT_WATERZAP)
-			S_StartSound(bubble, sfx_beelec)
+  if (body.charflags & SF_MACHINE)
+    if (body.powers[pw_underwater] and P_RandomChance((128-(body.powers[pw_underwater]/4))*FRACUNIT/256))
+      r = body.radius>>FRACBITS
+      x = $ + (P_RandomRange(r, -r)<<FRACBITS)
+      y = $ + (P_RandomRange(r, -r)<<FRACBITS)
+      z = $ + (P_RandomKey(body.height>>FRACBITS)<<FRACBITS)
+      P_SpawnMobj(x, y, z, MT_WATERZAP)
+      S_StartSound(bubble, sfx_beelec)
     end
-	else
-		if (body.eflags & MFE_VERTICALFLIP)
-			z = $ + body.height - FixedDiv(body.height,5*(FRACUNIT/4))
-		else
+  else
+    if (body.eflags & MFE_VERTICALFLIP)
+      z = $ + body.height - FixedDiv(body.height,5*(FRACUNIT/4))
+    else
       z = $ + FixedDiv(body.height,5*(FRACUNIT/4))
     end
 
-		if (P_RandomChance(FRACUNIT/16))
-			P_SpawnMobj(x, y, z, MT_SMALLBUBBLE)
-		elseif (P_RandomChance(3*FRACUNIT/256))
+    if (P_RandomChance(FRACUNIT/16))
+      P_SpawnMobj(x, y, z, MT_SMALLBUBBLE)
+    elseif (P_RandomChance(3*FRACUNIT/256))
       P_SpawnMobj(x, y, z, MT_MEDIUMBUBBLE)
     end
-	end
+  end
 end
 
 local function handleBodyDrowning(player)
@@ -320,7 +320,7 @@ addHook("MapChange", function(player, object)
       player.body = nil
       player.pflags = $ & ~PF_NOCLIP
     end
-	end
+  end
 end)
 
 addHook("ThinkFrame", function()
@@ -331,7 +331,7 @@ addHook("ThinkFrame", function()
 
       player.prevcmd = player.cmd.buttons
     end
-	end
+  end
 end)
 
 
