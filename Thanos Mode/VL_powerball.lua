@@ -10,15 +10,16 @@
     
 */
 
-local POWERSTONE_DRAIN = 15
-local POWERBALL_LIFE = 12*TICRATE
+local POWERSTONE_DRAIN = 0
+local POWERBALL_LIFE = 500*TICRATE
 local POWERBALL_RADIUS = 192
 local POWERBALL_ROTSPEED = 1<<24
 local POWERBALL_SPEED = 256*FRACUNIT
-local POWERBALL_RANGE = 1024*FRACUNIT
+local POWERBALL_RANGE = 768*FRACUNIT
 
 local SPECIAL_MOBJS = { // Oh, there are always special cases
-  [MT_EGGSHIELD] = true
+  [MT_EGGSHIELD] = true,
+  [MT_THOK] = true
 }
 
 addHook("ShouldDamage", function(player, inflictor) 
@@ -63,12 +64,170 @@ local function isCloseEnough(mobjA, mobjB, hthreshold) // I dont know what I am 
   return false
 end
 
+local function isInRange(n, lowerlimit, upperlimit)
+  if (n >= lowerlimit and n <= upperlimit)
+    return true
+  end
+  return false
+end
+
+local function isIn3dRange(x, y, z, limits)
+  if (not(isInRange(x, limits.lower_x, limits.upper_x)))
+    return false
+  elseif (not(isInRange(y, limits.lower_y, limits.upper_y)))
+    return false
+  elseif (not(isInRange(z, limits.lower_z, limits.upper_z)))
+    return false
+  end
+
+  return true
+end
+
+local function searchEnemy(powerball, player)
+  local target
+
+  local limits = {
+    lower_x = player.mo.x - POWERBALL_RANGE,
+    upper_x = player.mo.x + POWERBALL_RANGE,
+    lower_y = player.mo.y - POWERBALL_RANGE,
+    upper_y = player.mo.y + POWERBALL_RANGE,
+    lower_z = player.mo.z - POWERBALL_RANGE/2,
+    upper_z = player.mo.z + POWERBALL_RANGE/2
+  }
+
+  searchBlockmap("objects", function(_, object) 
+    if (object.valid 
+      and (object.flags & (MF_ENEMY|MF_BOSS) or SPECIAL_MOBJS[object.type])
+      and isIn3dRange(object.x, object.y, object.z, limits)
+      and (powerball.prevtarget ~= object)) // The previous one (if not dead) is still flickering
+      target = object
+      return true
+    end
+  end, player.mo, limits.lower_x, limits.upper_x, limits.lower_y, limits.upper_y)
+
+  return target
+end
+
+local function searchWallsToBreak(powerball, player)
+  local target
+
+  local limits = {
+    lower_x = player.mo.x - POWERBALL_RANGE/4,
+    upper_x = player.mo.x + POWERBALL_RANGE/4,
+    lower_y = player.mo.y - POWERBALL_RANGE/4,
+    upper_y = player.mo.y + POWERBALL_RANGE/4,
+    lower_z = player.mo.z - POWERBALL_RANGE,
+    upper_z = player.mo.z + POWERBALL_RANGE
+  }
+
+  // Lets find some bustable blocks
+  searchBlockmap("lines", function(_, line) 
+    if (line.valid)
+      local x = (line.v1.x + line.v2.x)/2 
+      local y = (line.v1.y + line.v2.y)/2 
+
+      if (line.frontsector and line.frontsector.valid)
+        for rover in line.frontsector.ffloors()
+          if (rover.valid and rover.flags & FF_BUSTUP and rover.flags & FF_EXISTS)
+            local middlez = (rover.topheight + rover.bottomheight)/2 
+
+            if (isIn3dRange(x, y, middlez, limits)
+             or isIn3dRange(x, y, rover.topheight, limits)
+             or isIn3dRange(x, y, rover.bottomheight, limits))
+              target = {}
+              target.v1 = line.v1
+              target.v2 = line.v2
+              target.bustsec = line.frontsector
+              target.bustrover = rover
+              return true
+            end
+          end
+        end
+      end
+
+      if (line.backsector and line.backsector.valid)
+        for rover in line.backsector.ffloors()
+          if (rover.valid and rover.flags & FF_BUSTUP and rover.flags & FF_EXISTS)
+            local middlez = (rover.topheight + rover.bottomheight)/2 
+
+            if (isIn3dRange(x, y, middlez, limits)
+             or isIn3dRange(x, y, rover.topheight, limits)
+             or isIn3dRange(x, y, rover.bottomheight, limits))
+              target = {}
+              target.v1 = line.v1
+              target.v2 = line.v2
+              target.bustsec = line.frontsector
+              target.bustrover = rover
+              return true
+            end
+          end
+        end
+      end
+    end
+  end, player.mo, limits.lower_x, limits.upper_x, limits.lower_y, limits.upper_y)
+
+  if (target)
+    local x = (target.v1.x + target.v2.x)/2 
+    local y = (target.v1.y + target.v2.y)/2 
+    local z = (target.bustrover.topheight + target.bustrover.bottomheight)/2 
+
+    // We spawn a mobj on the middle point
+    local dummyMobj = P_SpawnMobj(x, y, z, MT_THOK)
+    dummyMobj.flags2 = MF2_DONTDRAW
+    dummyMobj.bustsec = target.bustsec
+    dummyMobj.bustrover = target.bustrover
+
+    target = dummyMobj
+  end
+
+  return target
+end
+
+local function returnToMaster(powerball, player)
+  if (isCloseEnough(powerball, player.mo, FixedMul(POWERBALL_RADIUS*FRACUNIT, powerball.scale) + powerball.height))
+    powerball.onplayerradius = true // This is due to Z distance shit
+  end
+
+  if (powerball.onplayerradius)
+    powerball.prevtarget = nil
+    // If in radius, float around player
+    A_Custom3DRotate(powerball, POWERBALL_RADIUS, POWERBALL_ROTSPEED)
+  else
+    A_HomingChase(powerball, POWERBALL_SPEED, 0) // Go back to the player... graciously
+  end
+end
+
+local function chaseAndDestroyTarget(powerball, player)
+  powerball.onplayerradius = false
+  A_HomingChase(powerball, POWERBALL_SPEED, 1) // Hunt down those f*ers
+
+  local target = powerball.tracer
+  if (isCloseEnough(powerball, target, powerball.height))
+    P_DamageMobj(target, powerball, player.mo)
+    if (SPECIAL_MOBJS[target.type])
+      if (target.bustsec and target.bustsec.valid and target.bustrover and target.bustrover.valid)
+        EV_CrumbleChain(target.bustsec, target.bustrover) // Break it!
+      end
+      P_KillMobj(target) // If cannot damage, kill it
+    end
+
+    // Slow down, friend!
+    powerball.momx = 0
+    powerball.momy = 0
+    powerball.momz = 0
+
+    // Keep from hitting the same enemy again
+    powerball.prevtarget = powerball.tracer
+    powerball.tracer = nil
+  end
+end
+
 local function powerBallThinker(powerball)
   if (not(powerball.valid)) return end
 
   local player = powerball.target.player
 
-  if (powerball.life <= 0)
+  if (powerball.life <= 0) // Your time is over
     S_StartSound(powerball, 120)
     P_KillMobj(powerball)
     player.mo.powerball = nil
@@ -78,51 +237,28 @@ local function powerBallThinker(powerball)
 
   S_StartSoundAtVolume(powerball, 30, 100)
 
-  if (not(powerball.tracer and powerball.tracer.valid))
-    local target
+  if (not(powerball.tracer and powerball.tracer.valid)) // We do not have a target yet
+    if (not(P_CheckSight(powerball, player.mo)))
+      returnToMaster(powerball, player) // Dont leave me alone
+      return
+    end
 
-    searchBlockmap("objects", function(_, object) 
-      if (object.valid 
-         and (object.flags & (MF_ENEMY|MF_BOSS) or SPECIAL_MOBJS[object.type])
-         and (powerball.prevtarget ~= object)) // The previous one (if not dead) is still flickering
-        target = object
-        return true
-      end
-    end, player.mo, player.mo.x - POWERBALL_RANGE, player.mo.x + POWERBALL_RANGE, player.mo.y - POWERBALL_RANGE/2, player.mo.y + POWERBALL_RANGE/2)
+    local target = searchEnemy(powerball, player, limits)
+
+    if (not(target))
+      // Ok, we did not find enemies, so we look for something to break
+      target = searchWallsToBreak(powerball, player, limits)
+    end
 
     if (target)
       S_StartSound(powerball, 109)
       powerball.tracer = target
     else
-      if (isCloseEnough(powerball, player.mo, FixedMul(POWERBALL_RADIUS*FRACUNIT, powerball.scale) + powerball.height))
-        powerball.onplayerradius = true // This is due to Z distance shit
-      end
-
-      if (powerball.onplayerradius)
-        powerball.prevtarget = nil
-        A_Custom3DRotate(powerball, POWERBALL_RADIUS, POWERBALL_ROTSPEED)
-      else
-        A_HomingChase(powerball, POWERBALL_SPEED, 0) // Go back to the player... graciously
-      end
+      // Nothing to destroy =´(
+      returnToMaster(powerball, player)
     end
   else
-    powerball.onplayerradius = false
-    A_HomingChase(powerball, POWERBALL_SPEED, 1) // Hunt down those f*ers
-    if (isCloseEnough(powerball, powerball.tracer, powerball.height))
-        P_DamageMobj(powerball.tracer, powerball, player.mo)
-        if (SPECIAL_MOBJS[powerball.tracer.type])
-          P_KillMobj(powerball.tracer) // If cannot damage, kill it
-        end
-
-        // Slow down, friend!
-        powerball.momx = 0
-        powerball.momy = 0
-        powerball.momz = 0
-
-        // Keep froom hitting the same enemy again
-        powerball.prevtarget = powerball.tracer
-        powerball.tracer = nil
-    end
+    chaseAndDestroyTarget(powerball, player)
   end
 end
 

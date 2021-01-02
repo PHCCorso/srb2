@@ -1,6 +1,6 @@
 /* 
   Author: PHCC
-  Date: 30/12/2020
+  Date: 02/01/2021
 
   MIND/SOUL POWAS!
   
@@ -43,6 +43,7 @@ local function doAstralProjection(player) // Disembody yourself (inspired on P_S
   body.powers = {}
   body.powers[pw_spacetime] = player.powers[pw_spacetime]
   body.powers[pw_underwater] = player.powers[pw_underwater]
+  body.powers[pw_invulnerability] = player.powers[pw_invulnerability] // This is our little secret
   body.powers[pw_shield] = player.powers[pw_shield]
   body.charflags = player.charflags
 
@@ -61,6 +62,7 @@ local function doAstralProjection(player) // Disembody yourself (inspired on P_S
     followmobj.color = player.followmobj.color
     followmobj.colorized = player.followmobj.colorized
 
+    // TODO: this did not solve anything and it is yet to be fixed (somehow)
     followmobj.flags2 = player.followmobj.flags2 & ~MF2_LINKDRAW // Solving dispoffset issues
 
     followmobj.target = body
@@ -244,6 +246,9 @@ local function handlePlayerProjection(player)
       player.followmobj.frame = $ | TR_TRANS60
     end
 
+    // Special case for invulnerability here (this power should be MORE useful, right?)
+    player.body.powers[pw_invulnerability] = player.powers[pw_invulnerability]
+
     searchBlockmap("objects", function(mo, object) 
       if (object.valid)
       // We want our ghost to be able to grab collectibles (rings and such), so we are not always intangible
@@ -279,6 +284,10 @@ end)
 
 addHook("PlayerCanDamage", function(player, object) // Ghost player also cannot damage anything
     if (player.mo and player.mo.valid)
+      if (player.powers[pw_invulnerability]) // Well, I was lying
+        return true
+      end
+      
       if (player.body and player.body.valid)
         return false
       end
@@ -312,6 +321,10 @@ addHook("MobjThinker", function(mo)
         // Exception for shields
         if (mo.flags2 & MF2_SHIELD)
           handleShieldShit(body, mo)
+          return
+        end
+
+        if (body.powers[pw_invulnerability]) // Oh, well... if you can attack, you can be seen
           return
         end
 
