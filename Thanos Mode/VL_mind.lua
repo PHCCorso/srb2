@@ -110,7 +110,7 @@ local function endAstralProjection(body, damaged) // We are bringing our ghost/s
   P_RemoveMobj(body)
 end
 
-local function spawnBodyBubbles(body) // Shamelessly stolen from srb2 sourcecode (why do it again when already done?)
+local function spawnBodyBubbles(body) // Shamelessly stolen from srb2 sourcecode — P_DoBubbleBreath (why do it again when already done?)
   local x = body.x
   local y = body.y
   local z = body.z
