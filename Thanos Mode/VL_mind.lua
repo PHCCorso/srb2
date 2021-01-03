@@ -113,7 +113,9 @@ local function endAstralProjection(body, damaged) // We are bringing our ghost/s
   end
   P_SpawnShieldOrb(player)
 
-  player.pflags = $ & ~PF_NOCLIP
+  player.exiting = 0 // NOPE!
+  player.powers[pw_nocontrol] = 0
+  player.pflags = $ & ~PF_NOCLIP & ~PF_FINISHED & ~PF_FULLSTASIS
 
   player.body = nil
 
@@ -218,6 +220,9 @@ local function handlePlayerProjection(player)
 
   // Actual handling
   if (player.body and player.body.valid)
+    player.exiting = 0 // Naughty naughty, you are not gonna finish the level as a ghost!
+    player.pflags = $ & ~PF_FINISHED
+
     if (player.powers[pw_carry] == CR_PLAYER)
       player.powers[pw_carry] = CR_NONE // Ghosts cannot be carried
     end
@@ -351,6 +356,16 @@ addHook("MobjMoveCollide", function(toucher, touched)
       if (toucher.type == MT_EXTRALARGEBUBBLE and toucher.z >= touched.z + touched.height/2) // Handling breathing if left on an air bubble patch
         P_RemoveMobj(toucher)
         touched.gaspstatetics = GASPSTATETICS // wait a little to return to stand state
+      end
+    end
+  end
+end)
+
+addHook("PostThinkFrame", function()
+  for player in players.iterate
+    if (player.mo and player.mo.valid)
+      if (player.body and player.body.valid and player.exiting > 0)
+        
       end
     end
   end
